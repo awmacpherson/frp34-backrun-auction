@@ -1,0 +1,122 @@
+%%% FONT + LAYOUT %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[a4paper,11pt]{article}
+
+
+\usepackage{fouriernc} % set font
+
+
+\usepackage[english]{babel}   % Spacing and hyphenation rules for English.
+\usepackage{xurl} % line break URLs (excl. bibliography)
+\usepackage[T1]{fontenc} % ensures that ANSI carets and mid render correctly and are searchable
+
+\usepackage[margin=25mm]{geometry}
+
+
+\usepackage{calc}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{verbatim}
+
+
+
+%%% HYPERLINKS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\usepackage[colorlinks=true,
+                linkcolor=teal,
+                citecolor=olive,
+                destlabel=true,
+                bookmarks=true]{hyperref}
+
+% Turns cross-references into links by redefining \refstepcounter
+% Turns citations into links by redefining \bibcite
+% Turns amsmath equation numbers into links by unknown wizardry
+% Provides \href{}{}
+
+\usepackage{bookmark} 
+% patches hyperref to simplify processing (no .out file is generated and 
+% only needs 2 runs).
+
+
+%%% BIBLIOGRAPHY %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage[style=numeric, url=false]{biblatex}
+\setcounter{biburllcpenalty}{1}   % freely break URLs at lowercase
+
+\usepackage{csquotes} % prevent a warning when using biblatex with babel
+
+
+\addbibresource{frp34.bib}
+
+% exactly as misc but with doi and url fields removed
+\DeclareBibliographyDriver{eprint}{%
+  \usebibmacro{bibindex}%
+  \usebibmacro{begentry}%
+  \usebibmacro{author/editor+others/translator+others}%
+  \setunit{\printdelim{nametitledelim}}\newblock
+  \usebibmacro{title}%
+  \newunit
+  \printlist{language}%
+  \newunit\newblock
+  \usebibmacro{byauthor}%
+  \newunit\newblock
+  \usebibmacro{byeditor+others}%
+  \newunit\newblock
+  \printfield{howpublished}%
+  \newunit\newblock
+  \printfield{type}%
+  \newunit
+  \printfield{version}%
+  \newunit
+  \printfield{note}%
+  \newunit\newblock
+  \usebibmacro{organization+location+date}%
+  \newunit\newblock
+  \usebibmacro{eprint}%
+  \newunit\newblock
+  \usebibmacro{addendum+pubstate}%
+  \setunit{\bibpagerefpunct}\newblock
+  \usebibmacro{pageref}%
+  \newunit\newblock
+  \iftoggle{bbx:related}
+    {\usebibmacro{related:init}%
+     \usebibmacro{related}}
+    {}%
+  \usebibmacro{finentry}}
+%
+
+%%% AMSMATH %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+
+\newcommand\naturals{\mathbb N}
+\let\N\naturals
+\newcommand\integers{\mathbb Z}
+\let\Z\integers
+\newcommand\Q{\mathbb Q}
+\let\Q\rationals
+\newcommand\reals{\mathbb R}
+\let\R\reals
+\newcommand\complexes{\mathbb C}
+\let\C\complexes
+
+
+\newcommand{\defeq}{\mathrel{\vcenter{\hbox{\scriptsize:}}\!=}} % :=
+\newcommand{\eqdef}{\mathrel{=\!\vcenter{\hbox{\scriptsize:}}}} % =:
+
+
+%%% AMSTHM %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{amsthm}
+
+%%% MACROS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{macro}
+\usepackage{circuitikz}
+\title{Do backrun auctions protect traders?}
+\author{Andrew W. Macpherson}
+\begin{document}
+\input{document}
+\end{document}
