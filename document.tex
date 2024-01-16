@@ -4,6 +4,8 @@
 
   We study a new `laminated' queueing model for orders on batched trading venues such as decentralised exchanges.
   %
+  The model aims to capture and generalise transaction queueing infrastructure that has arisen to organise MEV activity on public blockchains such as Ethereum, providing convenient channels for sophisticated agents to extract value by `acting on' end-user order flow by performing arbitrage and related HFT activities.
+  %
   In our model, market orders are interspersed with orders created by arbitrageurs that under idealised conditions reset the marginal price to a global equilibrium between each trade, improving predictability of execution for liquidity traders.
   
   If an arbitrageur has a chance to land multiple opportunities in a row, he may attempt to manipulate the execution price of the intervening market order by a probabilistic `blind sandwiching' strategy.
@@ -64,27 +66,38 @@ Moreover, the extreme proliferation of novel assets and trading venues on these 
 
 
 
-\subsection{Bringing order to the backrun market}
+\subsection{Bringing order to the arbitrage market}
 
 %In the context of decentralised finance, HFT agents are also known as \emph{MEV searchers} \cite{daian2020flash}.
 %
-The discrete time environment of programmable blockchains provides a new type of opportunity for arbitrageurs: the possibility to \emph{backrun} a price-moving trade by arranging for a transaction to be sequenced in the very next position in the block.
+The discrete time environment of programmable blockchains provides a new type of opportunity for arbitrageurs: the possibility to \emph{backrun} a price-moving trade by having the arbitrage transaction sequenced in the very next position in the block.
 %
 This differs from the `continuous' execution environment of traditional exchanges in that no other transaction can intervene between the target trade and the backrun.
 %
-From a real-time perspective, the target transaction and its backrun appear to execute at exactly the same time. 
+%From a real-time perspective, the target transaction and its backrun appear to execute at exactly the same time. 
 %
-This type of backrun is commonly employed to arbitrage CFMM DEXes \cite{wang2022cyclic}.\footnote{In continuous time contexts, `back-running' also refers to a class of strategies that act on information as soon as possible after it becomes visible in an order book \cite{yang2020back}.}
+This type of backrun is commonly employed to arbitrage CFMM DEXes \cite{wang2022cyclic}.%\footnote{In continuous time contexts, `back-running' also refers to a class of strategies that act on information as soon as possible after it becomes visible in an order book \cite{yang2020back}.}
 
-Generally, only one arbitrage transaction is needed to reset the price after a price-moving trade.
+The general model for how arbitrageurs carry out this procedure is as follows: unconfirmed transactions from `ordinary' end users gather in a pool --- public or otherwise --- observed by algorithmic traders, or \emph{MEV searchers}.
 %
-In Ethereum's public mempool, arbitrageurs must compete to be allocated each backrun position through complex and subtle bidding and timing games \cite{daian2020flash}.
+Information about the contents of these transactions may be completely or selectively revealed to searchers, who then construct arbitrage transactions and attempt to arrange for them to be sequenced so as to best exploit the opportunities created by the incoming order flow.
+
+In Ethereum's public mempool, the contents of pending transactions are fully visible to arbitrageurs, who must compete to be allocated each backrun position through complex and subtle bidding and timing games \cite{daian2020flash}.
 %
-Given the vital function performed by arbitrageurs in aligning prices across different trading venues, it is not surprising that the industry has begun to explore designs for preferred channels along which arbitrageurs can compete for and act on backrun opportunities in a more orderly fashion.\footnote{\emph{MEV Blocker}, \url{https://mevblocker.io}}\footnote{\emph{MEV-Share}, \url{https://collective.flashbots.net/t/mev-share-programmably-private-orderflow-to-share-mev-with-users/1264}}\footnote{SUClave, \url{https://github.com/getclave/suclave-ethglobal-istanbul}}
+Moreover, if arbitrageurs themselves submit transactions to the public mempool, they too can become the victim of targeted exploitation by other searchers.
+%
+Like traditional HFT, this incurs substantial costs and barriers to entry on the part of searchers; furthermore, the congestion caused by excessive messaging and failed transactions is an additional cost borne by Ethereum itself.
+
+Given the vital function performed by arbitrageurs in aligning prices across different trading venues and the problems associated with the ad hoc public mempool competition, it is not surprising that the industry has begun to explore designs for preferred channels along which arbitrageurs can compete for and act on backrun opportunities in a more orderly fashion.\footnote{\emph{MEV Blocker}, \url{https://mevblocker.io}}\footnote{\emph{MEV-Share}, \url{https://collective.flashbots.net/t/mev-share-programmably-private-orderflow-to-share-mev-with-users/1264}}\footnote{SUClave, \url{https://github.com/getclave/suclave-ethglobal-istanbul}}
+%
+Such channels allow the competition for positioning to happen out of band, so that Ethereum need process \emph{only one} searcher transaction (or string of transactions originating from the same entity) after each user transaction, in recognition of the fact that generally only one arbitrage transaction is needed to reset the price after each price-moving trade.
 
 
 
-In this paper we consider an idealised trading venue $\market$ on which two classes of trader place orders to exchange a risky asset with a num\'eraire:
+\paragraph{Laminated batches}
+We now attempt to formalise the alternation of user and searcher arbitrage orders that arise from the type of privileged searcher channel just described.
+%
+Consider an idealised trading venue $\market$ on which two classes of trader place orders to exchange a risky asset with a num\'eraire:
 \begin{itemize}
   \item \emph{liquidity traders}, or \emph{price takers}, who are opinionated about the size (denominated in the risky asset) they wish to trade, but although they surely wish to get the best possible price given their size and time requirements, are not opinionated about the exact value of that price;
   \item \emph{arbitrageurs}, who are opinionated about the marginal price at which they are prepared to trade, but not size.
@@ -114,6 +127,8 @@ Orders are then executed in sequence
 alternating between liquidity and arbitrage orders.
 %
 We refer to this process of interleaving orders as \emph{lamination}, and to the resulting ordered segment as a \emph{laminated batch}.
+%
+For an illustration of how this model can be specialised to model a two-lane queueing system actually deployed in the wild, see Example \ref{mev-blocker}.
 
 
 \begin{remark}[Implementations of laminated batches]
@@ -154,7 +169,7 @@ We refer to this process of interleaving orders as \emph{lamination}, and to the
   \node  (7) at  (-1, 2) {};
   \node [label=above:$p_1+I(r_2)$]  (8) at  (0, 2.5) {};
   \node  (9) at  (1, 1.75) {};
-  \node [label=below:$p_2+I(r_3)$] (10) at (2, 1) {};
+  \node [label=below:$p_2+I(r_3)$] (10) at (2, 1.4) {};
   \node  (11) at (3, 2) {};
   \node  (12) at (-4, 4) {};
   \node [label=below:$p_0$] (13) at (-3, 2) {};
@@ -248,6 +263,8 @@ Obtaining bounds or concentration results on $C_\market$ should be useful for ex
 
 \subsection{Results}
 
+Our main contributions are to formalise the model sketched in the previous section, establish limiting cases --- in particular, when the probability of landing a sandwich vanishes --- in which arbitrageurs provide passthrough pricing, and establish a closed form approximation to price manipulation near the limit.
+
 Suppose given a market $\market$, a random order flow $(r_k)_{k=1}^K$, a population $\{1,\ldots,N\}$ of rational arbitrageurs, and a random slot allocation $\alpha:[K]_+\defeq\{0,\ldots,K\}\rightarrow[N]$.
 %
 Each arbitrageur $i$ quotes a target price $p_i$ with associated price $\phi(s_i)$ that will be the target price in slot $k$ for all $k\in\alpha^{-1}(i)$.\footnote{The case where arbitrageurs may set different prices for different slots will be treated shortly.}
@@ -262,7 +279,7 @@ That is, if we define
 
 Our first result is that under general conditions, best response strategies are dominant, so the optimal target price for each arbitrageur can be computed separately.
 
-\begin{theorem}[Existence and convergence of equilibrium prices]
+\begin{theorem}[Existence and convergence of equilibrium prices, \ref{theorem-existence}]
 
   The marginal quote $\hat{p}$ at each slot depends only on $p_\oracle$, the marginal distributions of the trade size and direction for each $k$, and the primary and secondary allocation weights $a_{i,k},b_{i,k}$.
   
@@ -278,7 +295,7 @@ We also obtain an explicit equation \eqref{lamination-equation} for the dominant
 
 As a special case, we obtain a formalisation of the claim made in the previous section that myopic arbitrageurs provide passthrough pricing.
 
-\begin{corollary}[Myopic arbitrageurs provide passthrough pricing]
+\begin{corollary}[Myopic arbitrageurs provide passthrough pricing, \ref{theorem-myopic}] 
 
   Suppose that all secondary allocation weights vanish.
   %
@@ -288,7 +305,7 @@ As a special case, we obtain a formalisation of the claim made in the previous s
 
 The general form \eqref{lamination-equation} for the \emph{lamination equation} obtained for the optimiser $\hat{p}$ is quite complicated.
 %
-It can be approched under simplifying assumptions. Suppose:
+It can be approached under simplifying assumptions. Suppose:
 \begin{enumerate}
   \item 
     The order flow distribution $r$ is \emph{symmetric} in the index set $\{1,\ldots,K\}$. 
@@ -310,7 +327,7 @@ where $M_r$ is the moment generating function of the distribution of $r$ and $\l
   In practical situations we can expect the error to be quite small ($<1\%$), more than enough to make order-of-magnitude judgements.
 \end{remark}
 
-\begin{theorem}[Zeta function approximation to manipulation coefficient]
+\begin{theorem}[Zeta function approximation to manipulation coefficient, \ref{theorem-zeta}]
 
   Suppose that the liquidity curve $\phi$ of $\market$ is approximated by its linearisation at $p_\oracle$ with error at most $C$.
   %
@@ -343,7 +360,7 @@ Labels are mapped to execution positions by a random indexing $\mathrm{idx}:\lab
 %
 We find that under suitable blinding assumptions for backrunners, the Nash equilibrium computation for this labelled lamination game collapses to the single-price one.
 
-\begin{theorem}
+\begin{theorem}[\ref{theorem-multi}]
 
   For sufficiently small order flow or coupling, and suitable action space, each arbitrageur has a dominant strategy.
   %
@@ -448,7 +465,7 @@ Our model of a trading venue follows the approach of \cite{milionis2023complexit
 
 The data of a market can be interpreted as follows.
 %
-Suppose we have a risky asset \(A\) and a num'eraire \(B\) that can be traded. 
+Suppose we have a risky asset \(A\) and a num\'eraire \(B\) that can be traded. 
 %
 Suppose that both assets are arbitrarily divisible and that a quantity \(r\) of \(A\) can be sold for \(\hat{C}(r)\) of \(B\), where \(\hat{C}\) is some piecewise-differentiable function defined in a neighbourhood \(U_0\) of \(r=0\). 
 %
@@ -859,7 +876,7 @@ By a continuity argument, a solution ${s^*}$ exists in an $L^0$-neighbourhood of
 \end{proof}
 \end{comment}
 
-\begin{proposition} \label{dominant-strategy-unique}
+\begin{theorem} \label{dominant-strategy-unique} \label{theorem-existence}
   
   Assume $\phi$ is continuously differentiable.
   %
@@ -867,7 +884,7 @@ By a continuity argument, a solution ${s^*}$ exists in an $L^0$-neighbourhood of
   %
   \qedhere
 
-\end{proposition}
+\end{theorem}
 %
 \begin{proof}
 
@@ -877,7 +894,7 @@ By a continuity argument, a solution ${s^*}$ exists in an $L^0$-neighbourhood of
 
 \end{proof}
 
-\begin{corollary} \label{dominant-strategy-passthrough}
+\begin{corollary} \label{dominant-strategy-passthrough} \label{theorem-myopic}
 
   Suppose that $\alpha$ is locally free (Definition \ref{locally-free}), that is, player $i$ almost surely lands no two consecutive slots.
   %
@@ -893,11 +910,17 @@ By a continuity argument, a solution ${s^*}$ exists in an $L^0$-neighbourhood of
 
 \subsection{Symmetric trade distribution with independent slot allocation}
 
+When the information structure is highly symmetric and uncoupled, the formulas for optimal arbitrage simplify considerably.
+%
+Under such hypotheses we can derive approximations to quotes in a simple closed form that can be used to derive bounds on manipulation.
+%
 For the remainder of this section, we suppose:
 \begin{itemize}
-  \item Liquidity order flow $(r_k)_{k=1}^K$ is symmetric;
-  \item Allocations are blind;
-  \item Slot allocations for player $i$ are determined by Bernoulli trials with weight $w_i=a_{i,k}=b_{i,k}$. That is, allocations are independent in the sense of Example \ref{independent-allocation} (hence symmetric).
+  \item Liquidity order flow $(r_k)_{k=1}^K$ is symmetric (arbitrageurs have no information about the sequence order);
+  \item Allocations are blind (arbitrageurs do not know more about the trades they are backrunning than they do about a generic trade);
+  \item Slot allocations for player $i$ are determined by Bernoulli trials with weight $w_i=a_{i,k}=b_{i,k}$. 
+  %
+  That is, allocations are independent in the sense of Example \ref{independent-allocation}, hence symmetric.
 \end{itemize}
 Then the lamination equation \eqref{lamination-equation} simplifies to
 \begin{equation}
@@ -970,7 +993,7 @@ In general, when we have only $||\log\bar\phi(1+r) + \lambda r || < C$ for some 
 
 \end{remark}
 
-\begin{proposition}[Zeta function approximation for price manipulation factor]
+\begin{theorem}[Zeta function approximation for price manipulation factor] \label{theorem-zeta}
 
   Suppose that linear approximation error of $\log\bar\phi(s)$ at $x_\oracle$ is bounded by $C$, that is, 
   \[
@@ -986,7 +1009,7 @@ In general, when we have only $||\log\bar\phi(1+r) + \lambda r || < C$ for some 
   
   %If in particular order flow is `geometrically balanced' in that $\Expectation[e^{-\lambda r}] = 1$, then $Z_{\phi,r}(\check w_i)\equiv 1$ so that $\log\bar\phi\approx 1$ with error bounded by $C$.
 
-\end{proposition}
+\end{theorem}
 
 \begin{remark}[Sizing $r$]
   Note that the relevant figure here is the expected price impact of each individual liquidity trade.
@@ -1094,7 +1117,7 @@ The utility optimisation equation takes a very similar form to \eqref{expected-u
 \end{equation}
 However, the randomness of the unknown indexing $\mathrm{idx}$ feeds into $h'$ and hence $s_{i,h'}$, so unlike the diagonal case this value must itself be treated as a random variable.
 
-\begin{proposition}
+\begin{proposition} \label{theorem-multi}
 
   For sufficiently small allocation weights or order flow, there exists an action space $A\subset(0,\infty)^K$ containing $(x_\oracle,\ldots,x_\oracle)$ such that all players in this game have a unique dominant strategy.
 
@@ -1114,7 +1137,7 @@ However, the randomness of the unknown indexing $\mathrm{idx}$ feeds into $h'$ a
 In other words, despite its greater input complexity, if backrunners have no information about sequence order then per-slot pricing is no more expressive than the uniform price game discussed in \S\ref{game}.
 
 
-\begin{example}[MEV-Blocker]
+\begin{example}[MEV-Blocker] \label{mev-blocker}
 
   Let's compare this model to the way MEV-blocker \cite{mevblocker2023docs} works.
   %
@@ -1126,7 +1149,7 @@ In other words, despite its greater input complexity, if backrunners have no inf
   %
   However, searchers are not informed of the final sequence order (unless they are integrated with the block builder), so $\mathrm{idx}:\labels\rightarrow[K]$ should be considered a random variable.
   
-  The allocation function $\alpha$ is determined by an auction.
+  The allocation function $\alpha:\labels\rightarrow[N]$ of slots to searchers is determined by an auction, so this random variable models the searcher's beliefs about the outcomes of this auction.
   %
   A searcher's private value for an allocation $\alpha(h)=i$, and hence their bid in the allocation auction, depends on the amount they can expect to gain from backrunning the trade $r_h$ (or frontrunning the subsequent trade).
   %
